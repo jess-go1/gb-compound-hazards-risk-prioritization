@@ -1,0 +1,82 @@
+# ============================================================
+# Python
+# ============================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ============================================================
+# Jupyter Notebooks
+# ============================================================
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/*
+*.ipynb_checkpoints
+
+# ============================================================
+# ERA5 / Climate Data — large files, never commit raw data
+# ============================================================
+*.nc          # NetCDF files (ERA5 format)
+*.nc4
+*.grib
+*.grb
+*.grb2
+*.h5
+*.hdf5
+*.zarr
+
+# Large CSV / processed data
+data/raw/
+data/processed/
+*.csv.gz
+*.parquet
+
+# ============================================================
+# Geospatial
+# ============================================================
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.geojson
+*.gpkg
+
+# ============================================================
+# Environment & secrets
+# ============================================================
+.env
+.env.*
+*.secret
+config/secrets.yaml
+config/secrets.yml
+
+# ============================================================
+# OS & editors
+# ============================================================
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ============================================================
+# Outputs — figures and reports are committed selectively
+# ============================================================
+outputs/figures/*.png
+outputs/figures/*.pdf
+outputs/reports/*.pdf
+# To commit a specific figure, use: git add -f outputs/figures/myplot.png

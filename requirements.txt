@@ -1,0 +1,34 @@
+# ============================================================
+# gb-compound-hazards-risk-prioritization
+# Python dependencies
+# ============================================================
+
+# Core data
+numpy>=1.24.0
+pandas>=2.0.0
+xarray>=2023.1.0       # ERA5 NetCDF handling
+netCDF4>=1.6.0         # NetCDF file reading
+h5netcdf>=1.1.0        # Alternative NetCDF backend
+
+# Clustering
+scikit-learn>=1.3.0    # DBSCAN implementation
+
+# Geospatial
+geopandas>=0.14.0      # Great Britain NUTS1 shapefiles
+shapely>=2.0.0         # Spatial operations
+pyproj>=3.6.0          # Coordinate reference systems
+rasterio>=1.3.0        # Raster data handling
+
+# Visualization
+matplotlib>=3.7.0
+seaborn>=0.12.0
+cartopy>=0.22.0        # Great Britain map projections
+plotly>=5.15.0         # Interactive plots (optional)
+
+# Notebooks
+jupyter>=1.0.0
+ipykernel>=6.25.0
+
+# Utilities
+tqdm>=4.65.0           # Progress bars for large datasets
+scipy>=1.11.0          # Statistical functions (percentiles, etc.)
