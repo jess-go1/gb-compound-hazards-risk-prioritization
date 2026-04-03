@@ -79,4 +79,5 @@ Thumbs.db
 outputs/figures/*.png
 outputs/figures/*.pdf
 outputs/reports/*.pdf
-# To commit a specific figure, use: git add -f outputs/figures/myplot.png
+# To commit a specific figure, use: git add -f outputs/figures/myplot.png*.docx
+*.pdf
