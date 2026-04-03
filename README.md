@@ -1,7 +1,8 @@
 # GB Compound Hazards Risk Prioritization
 
-> **Course:** AI for Human Water Systems  
-> **Dataset:** ERA5 Reanalysis — Copernicus Climate Data Store (2009–2019)  
+> **Course:** Artificial Intelligence in Human Water Systems
+> **Institution:** Technische Universität Berlin
+> **Dataset:** ERA5 Reanalysis — Copernicus Climate Data Store (2009–2019)
 > **Reference:** Tilloy et al. (2022), *Earth System Dynamics*, 13, 993–1020. https://doi.org/10.5194/esd-13-993-2022
 
 ---
@@ -18,74 +19,77 @@ This project detects, characterizes, and categorizes **compound hazard events** 
 
 Rather than analysing individual extreme events in isolation, we identify **spatiotemporal clusters** where both hazards co-occur. These compound events are then characterized using intensity, duration, spatial extent, and frequency metrics, which feed into a **risk prioritization table** designed to support resource allocation decisions by policymakers.
 
-Regional analysis is performed at the **NUTS1 level**, covering the 9 regions of Great Britain:
+Regional analysis is performed at the **NUTS1 level**, covering the regions of Great Britain.
 
-| NUTS1 Code | Region |
+---
+
+## 🔑 Key Results
+
+| Metric | Value |
 |---|---|
-| UKC | North East England |
-| UKD | North West England |
-| UKE | Yorkshire and The Humber |
-| UKF | East Midlands |
-| UKG | West Midlands |
-| UKH | East of England |
-| UKI | London |
-| UKJ | South East England |
-| UKK | South West England |
-| UKL | Wales |
-| UKM | Scotland |
+| Extreme precipitation observations | 36,925 |
+| Extreme wind observations | 39,109 |
+| Precipitation clusters (DBSCAN) | 161 |
+| Wind clusters (DBSCAN) | 128 |
+| Compound hazard events detected | 85 |
+| Primary affected region | South West England |
+| Season of events | SON (Sep–Nov 2019) |
+| Average compound duration | 16.6 hours |
+| Average peak wind gust | 24.13 m/s |
+| Overall priority level | **HIGH** |
+
+### Final Prioritization Table
+
+| Region (NUTS1) | Total Events | High Risk | Avg Duration (h) | Avg Peak Wind (m/s) | Avg Peak Rain (mm) | Avg Extent (km²) | Priority |
+|---|---|---|---|---|---|---|---|
+| South West England | 73 | 25 | 16.6 | 24.13 | 4.67 | 35,043 | **HIGH** |
+
+> South West England is consistent with Tilloy et al. (2022), who identified the southwestern coast as a primary hotspot for compound wind-precipitation clusters in Great Britain.
 
 ---
 
 ## 🔬 Methodology Pipeline
 
-### Step 1 — Preprocessing: Extreme Event Filtering
-- Load ERA5 hourly precipitation and wind gust data for Great Britain (2009–2019)
-- Compute **99th percentile thresholds** per grid cell for both variables
-- Filter dataset to retain only observations exceeding thresholds
-- Output: top 1% extreme events for precipitation and wind separately
+### Step 1 — Preprocessing: 99th Percentile Filtering
+- Load ERA5 hourly precipitation and wind gust data (2009–2019)
+- Compute **99th percentile threshold** per grid cell across all timesteps
+- Retain only observations exceeding the threshold
+- Output: 36,925 extreme precipitation and 39,109 extreme wind observations (~1% of total data)
 
-> *Purpose: reduce the dataset from millions of hourly grid values to only high-impact climate observations, making DBSCAN computationally tractable.*
+> *The 99th percentile alone identifies extreme grid cells — DBSCAN identifies extreme events. A decision-maker needs event-level attributes (duration, extent, intensity), not grid cell statistics.*
 
 ### Step 2 — Clustering: DBSCAN
-- Apply **DBSCAN** (Density-Based Spatial Clustering of Applications with Noise) independently to:
-  - Extreme precipitation events
-  - Extreme wind gust events
-- Clustering operates in a **space-time cube** (latitude × longitude × time)
-- Key DBSCAN parameters:
-  - `ε` (neighbourhood radius): determined via k-NN distance plot
-  - `min_samples` (μ): minimum points to form a cluster
-
-> *Purpose: group dispersed extreme-value grid points into coherent spatiotemporal events with measurable properties. The 99th percentile alone identifies extreme grid cells — DBSCAN identifies extreme events, enabling the calculation of duration, spatial extent, and density per event.*
+- Apply **DBSCAN** independently to extreme precipitation and wind observations
+- Space-time cube representation: (normalized latitude x normalized longitude x hours)
+- Parameters selected via k-NN distance plot (elbow method):
+  - epsilon = 2.0 for both precipitation and wind
+  - min_samples = 10
+- Output: 161 precipitation clusters, 128 wind clusters
 
 ### Step 3 — Compound Hazard Detection
-- Identify **spatiotemporal overlaps** between precipitation clusters and wind clusters
-- A compound hazard event is defined as:
-  - **Spatial scale:** intersection of both clusters' footprints (AND)
-  - **Temporal scale:** union of both clusters' durations (OR)
-- Output: compound hazard cluster database for Great Britain (2009–2019)
+- Identify **spatiotemporal overlaps** between precipitation and wind clusters
+- Compound event definition (following Tilloy et al., 2022):
+  - **Spatial scale:** intersection of both cluster footprints (AND)
+  - **Temporal scale:** union of both cluster durations (OR)
+- Output: 85 compound hazard events
 
 ### Step 4 — Cluster Characterization
 Each compound hazard cluster is described by:
 
 | Attribute | Description |
 |---|---|
-| `duration_h` | Total duration of the compound event (hours) |
-| `spatial_extent_km2` | Spatial footprint of the compound cluster (km²) |
-| `peak_wind_gust` | Maximum wind gust within the cluster (m/s) |
-| `max_precipitation` | Maximum precipitation accumulation within the cluster (mm) |
-| `density` | Number of extreme grid points per cluster |
-| `start_date` | Start datetime of the event |
-| `nuts1_region` | NUTS1 region(s) of Great Britain affected |
+| `compound_duration_h` | Total duration of the compound event (hours) |
+| `compound_extent_km2` | Spatial footprint of the intersection (km²) |
+| `peak_wind_ms` | Maximum wind gust within the cluster (m/s) |
+| `peak_precipitation_mm` | Maximum precipitation accumulation (mm) |
+| `nuts1_region` | NUTS1 region of Great Britain affected |
+| `season` | Meteorological season (DJF/MAM/JJA/SON) |
 
-### Step 5 — Risk Categorization & Prioritization Table
-- Classify each compound cluster into **risk levels** (High / Medium / Low) using a wind intensity × precipitation intensity risk matrix
-- Aggregate results by NUTS1 region across Great Britain
-- Build final **decision-maker prioritization table** per region including:
-  - Event frequency
-  - Average duration
-  - Average intensity (wind + precipitation)
-  - Average spatial extent
-  - Overall risk category
+### Step 5 — Risk Categorization and Prioritization Table
+- Normalize intensities to empirical cumulative probability [0, 1]
+- Classify events using a **3x3 wind x precipitation risk matrix** (High/Medium/Low)
+- Aggregate by NUTS1 region
+- Build final **decision-maker prioritization table**
 
 ---
 
@@ -94,27 +98,21 @@ Each compound hazard cluster is described by:
 ```
 gb-compound-hazards-risk-prioritization/
 ├── data/
-│   ├── raw/                          # ERA5 original NetCDF files (not committed)
-│   │   ├── era5_precipitation/       # Hourly precipitation 2009-2019
-│   │   └── era5_wind/                # Hourly wind gust 2009-2019
-│   ├── processed/                    # Cleaned and filtered data (not committed)
+│   ├── raw/                          # ERA5 NetCDF files (not committed — too large)
+│   │   ├── raindat_0919.nc           # Hourly precipitation 2009-2019
+│   │   └── windat_0919.nc            # Hourly wind gust 2009-2019
+│   ├── processed/                    # Intermediate outputs (not committed)
 │   └── external/                     # Great Britain NUTS1 shapefiles
 ├── notebooks/
 │   ├── 01_eda.ipynb                  # Exploratory data analysis
-│   ├── 02_preprocessing.ipynb        # 99th percentile filtering
+│   ├── 02_preprocessing.ipynb        # 99th percentile filtering + space-time cube
 │   ├── 03_dbscan_clustering.ipynb    # DBSCAN on precipitation and wind
 │   ├── 04_compound_detection.ipynb   # Spatiotemporal overlap detection
 │   └── 05_risk_categorization.ipynb  # Risk table and prioritization
-├── src/
-│   ├── __init__.py
-│   ├── preprocessing.py              # Percentile filtering functions
-│   ├── clustering.py                 # DBSCAN implementation and helpers
-│   ├── compound.py                   # Compound hazard overlap logic
-│   └── visualization.py             # Maps and plots
 ├── outputs/
 │   ├── figures/                      # Generated maps and charts
-│   └── reports/                      # Summary tables and reports
-├── docs/                             # Additional documentation
+│   └── reports/                      # Final prioritization table (CSV)
+├── docs/
 ├── .gitignore
 ├── README.md
 └── requirements.txt
@@ -124,14 +122,16 @@ gb-compound-hazards-risk-prioritization/
 
 ## 🗂️ Data Source
 
-- **Dataset:** ERA5 Hourly Reanalysis — European Centre for Medium-Range Weather Forecasts (ECMWF)
+- **Dataset:** ERA5 Hourly Reanalysis — ECMWF via Copernicus Climate Data Store
 - **Access:** [Copernicus Climate Data Store](https://cds.climate.copernicus.eu/)
 - **Variables:**
   - `total_precipitation` — hourly accumulated precipitation (mm/h)
   - `instantaneous_10m_wind_gust` — hourly maximum wind gust at 10m (m/s)
-- **Spatial resolution:** 0.25° × 0.25°
-- **Temporal coverage used:** 2009–2019
+- **Spatial resolution:** 0.25 x 0.25 degrees (53 x 41 grid cells)
+- **Temporal coverage:** 2009–2019 (extreme event window: Sep–Nov 2019)
 - **Study area:** Great Britain (NUTS1 regions)
+
+> **Note on data structure:** The pre-processed ERA5 variable `p0005` contains full gridded values across all timesteps. Our own 99th percentile threshold was computed from this data to identify truly sparse extreme observations, consistent with the methodology of Tilloy et al. (2022).
 
 ---
 
@@ -139,18 +139,16 @@ gb-compound-hazards-risk-prioritization/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/<your-username>/gb-compound-hazards-risk-prioritization.git
+git clone https://github.com/jess-go1/gb-compound-hazards-risk-prioritization.git
 cd gb-compound-hazards-risk-prioritization
 
-# 2. Create and activate a virtual environment
-python -m venv venv
-source venv/bin/activate        # Linux/Mac
-venv\Scripts\activate           # Windows
-
-# 3. Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
 
-# 4. Launch Jupyter
+# 3. Add ERA5 data files to data/raw/
+#    raindat_0919.nc and windat_0919.nc
+
+# 4. Launch Jupyter and run notebooks in order (01 to 05)
 jupyter notebook
 ```
 
@@ -159,9 +157,9 @@ jupyter notebook
 ## 🌿 Git Branching Strategy
 
 ```
-main        ← stable, reviewed code only
-develop     ← integration branch for both contributors
-feature/*   ← individual task branches (e.g. feature/dbscan-clustering)
+main        <- stable, reviewed code only
+develop     <- integration branch
+feature/*   <- individual task branches
 ```
 
 **Commit convention:**
@@ -176,17 +174,26 @@ refactor: code restructuring
 
 ---
 
-## 📚 Reference
+## 📚 References
 
 Tilloy, A., Malamud, B. D., and Joly-Laugel, A. (2022).
-*A methodology for the spatiotemporal identification of compound hazards: wind and precipitation extremes in Great Britain (1979–2019).*
-Earth System Dynamics, 13, 993–1020.
+*A methodology for the spatiotemporal identification of compound hazards: wind and precipitation extremes in Great Britain (1979-2019).*
+Earth System Dynamics, 13, 993-1020.
 https://doi.org/10.5194/esd-13-993-2022
+
+Zscheischler, J., Martius, O., Westra, S., et al. (2020).
+*A typology of compound weather and climate events.*
+Nature Reviews Earth and Environment, 1, 333-347.
+https://doi.org/10.1038/s43017-020-0060-z
+
+Hersbach, H., Bell, B., Berrisford, P., et al. (2020).
+*The ERA5 global reanalysis.*
+Quarterly Journal of the Royal Meteorological Society, 146(730), 1999-2049.
+https://doi.org/10.1002/qj.3803
 
 ---
 
-## 👥 Authors
+## 👤 Author
 
-- [Your Name]
-- [Partner's Name]  
-*AI for Human Water Systems — 2024/2025*
+**Jessica Gonzalez Hurtado** (Matrikelnummer: 5406583)
+*Artificial Intelligence in Human Water Systems — Technische Universitat Berlin, 2025/2026*
